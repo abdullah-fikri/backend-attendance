@@ -1,14 +1,4 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./frontend/.env
-    depends_on:
-      - backend
-
   database:
     image: postgres:17-alpine
     env_file:
