@@ -15,26 +15,26 @@ datasource db {
 
 model User {
   id            String    @id @default(uuid())
-  full_name     String
+  fullName      String    @map("full_name")
   email         String    @unique
-  password_hash String
-  avatar_url    String?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  deleted_at    DateTime?
+  passwordHash  String    @map("password_hash")
+  avatarUrl     String?   @map("avatarUrl")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
 
-  role_id Int
-  role Role @relation(fields: [role_id], references: [id])
+  roleId       Int       @map("role_id")               
+  role Role @relation(fields: [roleId], references: [id])
 
   @@index([email])
   @@map("users")
 }
 
 model Role {
-  id Int @id @default(autoincrement())
-  name String @unique
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
   description String
-  created_at DateTime @default(now())
+  createdAt   DateTime @default(now()) @map("created_at")
 
   user User[]
 
