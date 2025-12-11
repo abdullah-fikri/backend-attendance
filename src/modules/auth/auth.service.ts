@@ -12,8 +12,6 @@ export class AuthService {
 
   async login(email: string, plainPassword: string) {
     const user = await this.getUserByEmail(email);
-    console.log(user?.email)
-    console.log(user?.passwordHash)
 
     if (!user) {
       throw new HttpException(
@@ -28,7 +26,6 @@ export class AuthService {
       user.passwordHash,
       plainPassword,
     );
-    console.log("plainPassword:", plainPassword);
 
     if (!isValidPassword) {
       throw new HttpException(
