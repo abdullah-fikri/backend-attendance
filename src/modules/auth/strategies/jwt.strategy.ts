@@ -11,9 +11,9 @@ export interface JwtPayload {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly configService: ConfigService) {
-    const secret = configService.get<string>('JWT_SECRET');
+    const secret = configService.get<string>('APP_SECRET');
     if (!secret) {
-      throw new Error('JWT_SECRET is missing');
+      throw new Error('APP_SECRET is missing');
     }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
