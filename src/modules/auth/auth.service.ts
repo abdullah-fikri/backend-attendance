@@ -1,26 +1,54 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/config/prisma.service';
+import { JwtService } from '@nestjs/jwt';
+import { verifyPassword } from 'src/common/utils/password.util';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
+
+  async login(email: string, plainPassword: string) {
+    const user = await this.getUserByEmail(email);
+    console.log(user?.email)
+    console.log(user?.passwordHash)
+
+    if (!user) {
+      throw new HttpException(
+        {
+          message: 'user with this email address not found',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const isValidPassword = await verifyPassword(
+      user.passwordHash,
+      plainPassword,
+    );
+    console.log("plainPassword:", plainPassword);
+
+    if (!isValidPassword) {
+      throw new HttpException(
+        {
+          message: 'incorrect password entered',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const payload = { sub: user.id, role: user.roleId };
+
+    const token = this.jwtService.sign(payload);
+
+    return token;
   }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  async getUserByEmail(email: string) {
+    return await this.prisma.user.findUnique({
+      where: { email },
+    });
   }
 }
