@@ -1,6 +1,7 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
+import type { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -8,9 +9,19 @@ export class AuthController {
 
   @Post('login')
   @ResponseMessage('success to login')
-  async login(@Body() body: { email: string; password: string }) {
+  async login(
+    @Body() body: { email: string; password: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { email, password } = body;
+    const token = await this.authService.login(email, password);
 
-    return await this.authService.login(email, password);
+    res.cookie('accessToken', token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24,
+    });
+    return { token };
   }
 }
