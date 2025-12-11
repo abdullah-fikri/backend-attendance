@@ -24,4 +24,15 @@ export class AuthController {
     });
     return { token };
   }
+
+  @Post('logout')
+  @ResponseMessage('success to logout')
+  async logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+    });
+    return { message: 'logout success' };
+  }
 }
