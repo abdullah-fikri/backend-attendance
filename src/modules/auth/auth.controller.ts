@@ -32,6 +32,5 @@ export class AuthController {
       secure: false,
       sameSite: 'lax',
     });
-    return { message: 'logout success' };
   }
 }
