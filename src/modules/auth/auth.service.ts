@@ -36,7 +36,7 @@ export class AuthService {
       );
     }
 
-    const payload = { sub: user.id, role: user.roleId };
+    const payload = { sub: user.id, role: user.role.name };
 
     const token = this.jwtService.sign(payload);
 
@@ -46,6 +46,9 @@ export class AuthService {
   async getUserByEmail(email: string) {
     return await this.prisma.user.findUnique({
       where: { email },
+      include: {
+        role: true,
+      },
     });
   }
 }
