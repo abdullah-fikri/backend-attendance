@@ -1,15 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
-import { GetUsersDto } from './dto/get-users.dto';
-import { Roles } from 'src/common/decorators/roles.decorator';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-
-
-
+import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { CreateUserDto } from './dto/create-user.dto';
+import { GetUsersDto } from './dto/get-users.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
@@ -21,10 +27,9 @@ export class UsersController {
   }
 
   @Get()
-  @Roles("admin")
-  @UseGuards(JwtAuthGuard)
+  @Roles('ADMIN')
   @ResponseMessage('Success Get Data users')
-  async findAll(@Query() query: GetUsersDto,  @Req() req: Request) {
+  async findAll(@Query() query: GetUsersDto, @Req() req: Request) {
     return this.usersService.findAll(query, req.originalUrl);
   }
 
