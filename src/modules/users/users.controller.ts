@@ -1,15 +1,14 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
+import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UsersService } from './users.service';
+import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
+import { GetUsersDto } from './dto/get-users.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import type { Request } from 'express';
+
+
+
 
 @Controller('users')
 export class UsersController {
@@ -21,8 +20,10 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @Roles("admin")
+  @ResponseMessage('Success Get Data users')
+  async findAll(@Query() query: GetUsersDto,  @Req() req: Request) {
+    return this.usersService.findAll(query, req.originalUrl);
   }
 
   @Get(':id')
