@@ -26,6 +26,7 @@ model User {
 
   roleId       Int       @map("role_id")               
   role Role @relation(fields: [roleId], references: [id])
+  attendance Attendance[]
 
   @@index([email])
   @@map("users")
@@ -40,4 +41,33 @@ model Role {
   users User[]
 
   @@map("roles")
+}
+
+model Attendance {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+
+  date          DateTime  @db.Date
+  clockInTime   DateTime
+  clockOutTime  DateTime? 
+
+  latIn         Decimal   @db.Decimal(10, 8)
+  longIn        Decimal   @db.Decimal(10, 8)
+  latOut        Decimal?  @db.Decimal(10, 8) 
+  longOut       Decimal?  @db.Decimal(10, 8) 
+
+  status        AttendanceStatus
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([date])
+}
+
+enum AttendanceStatus {
+  ON_TIME
+  LATE
+  ABSENT
 }
