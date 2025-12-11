@@ -1,14 +1,30 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role } from 'generated/prisma/client';
+import { hashPassword } from 'src/common/utils/password.util';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { faker } from '@faker-js/faker';
-import * as argon2 from 'argon2';
+import * as dotenv from 'dotenv';
+import { Pool } from 'pg';
 
-const prisma = new PrismaClient({accelerateUrl: '',});
+dotenv.config();
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('DATABASE_URL is not defined in .env file');
+  process.exit(1);
+}
+
+const pool = new Pool({
+  connectionString,
+});
+
+
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
-
   const rolesData = [
     { name: 'ADMIN', description: 'Administrator role' },
-    { name: 'USER', description: 'Regular user role' },
+    { name: 'EMPLOYEE', description: 'Employee role' },
   ];
 
 const roles: Role[] = []
@@ -22,11 +38,10 @@ const roles: Role[] = []
   }
 
   const adminRole = roles.find(r => r.name === 'ADMIN')!;
-
   for (let i = 0; i < 3; i++) {
     const fullName = faker.person.fullName();
     const email = `admin${i + 1}@email.com`;
-    const passwordHash = await argon2.hash('nasthaadmin');
+    const passwordHash = await hashPassword('nasthaadmin');
     const avatarUrl = faker.image.avatar();
 
     await prisma.user.upsert({
