@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -6,6 +6,7 @@ import { ResponseMessage } from 'src/common/decorators/response-message.decorato
 import { GetUsersDto } from './dto/get-users.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import type { Request } from 'express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 
 
@@ -21,6 +22,7 @@ export class UsersController {
 
   @Get()
   @Roles("admin")
+  @UseGuards(JwtAuthGuard)
   @ResponseMessage('Success Get Data users')
   async findAll(@Query() query: GetUsersDto,  @Req() req: Request) {
     return this.usersService.findAll(query, req.originalUrl);
