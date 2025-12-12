@@ -8,6 +8,7 @@ import { PrismaModule } from './config/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { UsersModule } from './modules/users/users.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
 
 @Module({
   providers: [
@@ -29,6 +30,7 @@ import { UsersModule } from './modules/users/users.module';
     PrismaModule,
     UsersModule,
     AuthModule,
+    AttendanceModule,
     JwtConfigModule,
     ProfileModule,
   ],
