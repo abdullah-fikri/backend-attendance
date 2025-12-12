@@ -26,7 +26,7 @@ model User {
 
   roleId       Int       @map("role_id")               
   role Role @relation(fields: [roleId], references: [id])
-  attendance Attendance[]
+  attendances Attendance[]
 
   @@index([email])
   @@map("users")
@@ -45,25 +45,27 @@ model Role {
 
 model Attendance {
   id            String    @id @default(uuid())
-  userId        String
+  userId        String    @map("user_id")
   user          User      @relation(fields: [userId], references: [id])
 
   date          DateTime  @db.Date
-  clockInTime   DateTime
-  clockOutTime  DateTime? 
+  clockInTime   DateTime  @map("clock_in_time")
+  clockOutTime  DateTime? @map("clock_out_time")
 
-  latIn         Decimal   @db.Decimal(10, 8)
-  longIn        Decimal   @db.Decimal(10, 8)
-  latOut        Decimal?  @db.Decimal(10, 8) 
-  longOut       Decimal?  @db.Decimal(10, 8) 
+  latIn         Decimal   @db.Decimal(10, 8) @map("lat_in")
+  longIn        Decimal   @db.Decimal(10, 8) @map("long_in")
+  latOut        Decimal?  @db.Decimal(10, 8) @map("lat_out")
+  longOut       Decimal?  @db.Decimal(10, 8) @map("long_out")
 
   status        AttendanceStatus
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime  @default(now())    @map("created_at")
+  updatedAt     DateTime  @updatedAt         @map("updated_at")
 
   @@index([userId])
   @@index([date])
+
+  @@map("attendances")
 }
 
 enum AttendanceStatus {
