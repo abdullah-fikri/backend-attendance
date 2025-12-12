@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { hateoas } from 'src/common/utils/hateoas.util';
+import { buildMeta, buildPagination } from 'src/common/utils/pagination.util';
 import { PrismaService } from 'src/config/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { GetUsersDto } from './dto/get-users.dto';
-import { buildMeta, buildPagination } from 'src/common/utils/pagination.util';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UserMapper } from './mappers/user-mapper';
-import { hateoas } from 'src/common/utils/hateoas.util';
 
 @Injectable()
 export class UsersService {
@@ -15,40 +15,40 @@ export class UsersService {
   }
 
   async findAll(query: GetUsersDto, baseUrl: string) {
-    const {page, limit, skip, take} = buildPagination(query)
-    
-    const where: any = {}
+    const { page, limit, skip, take } = buildPagination(query);
 
-    if (query.search){
-      where.OR =[
-        {email: {contains: query.search, mode: 'insensitive'}},
-        {fullName: {contains: query.search, mode: 'insensitive'}},
+    const where: any = {};
+
+    if (query.search) {
+      where.OR = [
+        { email: { contains: query.search, mode: 'insensitive' } },
+        { fullName: { contains: query.search, mode: 'insensitive' } },
       ];
     }
 
-    if (query.role){
-      where.role = {name: query.role}
+    if (query.role) {
+      where.role = { name: query.role };
     }
 
-    const [data, total] =  await Promise.all([
+    const [data, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
         skip,
         take,
-        include: {role: true},
-        orderBy: {createdAt: 'desc'}
+        include: { role: true },
+        orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.user.count({where})
+      this.prisma.user.count({ where }),
     ]);
 
     const meta = buildMeta(page, limit, total);
     const links = hateoas(baseUrl, meta.page, meta.limit, meta.totalPages);
-  
+
     return {
       meta,
       links,
       data: data.map((user) => UserMapper.toResponse(user)),
-    }
+    };
   }
 
   async findOne(id: string) {
@@ -71,7 +71,12 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new HttpException(
+        {
+          message: 'User not found',
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return UserMapper.toResponse(user);

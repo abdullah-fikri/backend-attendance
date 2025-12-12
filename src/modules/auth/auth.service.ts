@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/config/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { verifyPassword } from 'src/common/utils/password.util';
+import { PrismaService } from 'src/config/prisma.service';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +16,7 @@ export class AuthService {
     if (!user) {
       throw new HttpException(
         {
-          message: 'user with this email address not found',
+          message: 'User with this email address not found',
         },
         HttpStatus.NOT_FOUND,
       );
@@ -30,7 +30,7 @@ export class AuthService {
     if (!isValidPassword) {
       throw new HttpException(
         {
-          message: 'incorrect password entered',
+          message: 'Incorrect password entered',
         },
         HttpStatus.BAD_REQUEST,
       );
