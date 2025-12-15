@@ -27,6 +27,8 @@ model User {
   roleId       Int       @map("role_id")               
   role Role @relation(fields: [roleId], references: [id])
   attendances Attendance[]
+  absenceRequests AbsenceRequest[]
+
 
   @@index([email])
   @@map("users")
@@ -73,3 +75,38 @@ enum AttendanceStatus {
   LATE
   ABSENT
 }
+
+
+enum AbsenceType {
+  SICK
+  ANNUAL
+  UNPAID
+}
+
+enum AbsenceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+
+model AbsenceRequest {
+  id             String         @id @default(uuid())
+  userId         String         @map("user_id")
+
+  type           AbsenceType
+  startDate      DateTime       @db.Date @map("start_date")
+  endDate        DateTime       @db.Date @map("end_date")
+  reason         String
+  attachmentUrl  String?        @map("attachment_url")
+  status         AbsenceStatus  @default(PENDING)
+
+  user           User           @relation(fields: [userId], references: [id])
+
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([userId], map: "idx_absence_requests_user_id")
+  @@map("absence_requests")
+}
+
