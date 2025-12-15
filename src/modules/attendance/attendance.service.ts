@@ -76,15 +76,7 @@ export class AttendanceService {
     return attendance;
   }
 
-
-  create(createAttendanceDto: CreateAttendanceDto) {
-    return 'This action adds a new attendance';
-  }
-
-  findAll() {
-    return `This action returns all attendance`;
-  }
-
+  // get attendance today
   async findOne(userId: string) {
     const today = new Date();
     const start = new Date(
