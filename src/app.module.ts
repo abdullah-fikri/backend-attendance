@@ -9,7 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { UsersModule } from './modules/users/users.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
-import { AbsenceModule } from './absence/absence.module';
+import { AbsenceModule } from './modules/absence/absence.module';
 
 @Module({
   providers: [
@@ -35,7 +35,7 @@ import { AbsenceModule } from './absence/absence.module';
     JwtConfigModule,
     ProfileModule,
     AttendanceModule,
-    AbsenceModule
+    AbsenceModule,
   ],
 })
 export class AppModule {}
