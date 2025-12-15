@@ -33,6 +33,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
     AttendanceModule,
     JwtConfigModule,
     ProfileModule,
+    AttendanceModule
   ],
 })
 export class AppModule {}
