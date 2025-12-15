@@ -1,15 +1,15 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Req,
   BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
 } from '@nestjs/common';
+import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
+import { Roles } from 'src/common/decorators/roles.decorator';
 import { AttendanceService } from './attendance.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
-import { Roles } from 'src/common/decorators/roles.decorator';
-import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 
 @Controller('attendance')
 @Roles('EMPLOYEE')
@@ -24,6 +24,10 @@ export class AttendanceController {
     const { latIn, longIn } = body;
     if (latIn == null || longIn == null) {
       throw new BadRequestException('Latitude and Longitude are required');
+    }
+
+    if (Number.isNaN(latIn) || Number.isNaN(longIn)) {
+      throw new BadRequestException('Latitude and Longitude must be numbers');
     }
 
     return this.attendanceService.clockIn(userId, body);
