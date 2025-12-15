@@ -52,10 +52,10 @@ model Attendance {
   clockInTime   DateTime  @map("clock_in_time")
   clockOutTime  DateTime? @map("clock_out_time")
 
-  latIn         Decimal   @db.Decimal(10, 8) @map("lat_in")
-  longIn        Decimal   @db.Decimal(10, 8) @map("long_in")
-  latOut        Decimal?  @db.Decimal(10, 8) @map("lat_out")
-  longOut       Decimal?  @db.Decimal(10, 8) @map("long_out")
+  latIn         Decimal   @db.Decimal(12, 8) @map("lat_in")
+  longIn        Decimal   @db.Decimal(12, 8) @map("long_in")
+  latOut        Decimal?  @db.Decimal(12, 8) @map("lat_out")
+  longOut       Decimal?  @db.Decimal(12, 8) @map("long_out")
 
   status        AttendanceStatus
 
