@@ -10,3 +10,8 @@ export class CreateAttendanceDto {
   @IsNumber()
   longIn: number;
 }
+
+export class CreateClockOutDto{
+  latOut: number;
+  longOut: number;
+}
