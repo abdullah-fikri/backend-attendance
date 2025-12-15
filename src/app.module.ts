@@ -30,6 +30,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
     PrismaModule,
     UsersModule,
     AuthModule,
+    AttendanceModule,
     JwtConfigModule,
     ProfileModule,
     AttendanceModule
