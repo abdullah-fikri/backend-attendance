@@ -11,7 +11,7 @@ export class AbsenceService {
       where: { userId },
     });
 
-    if (!absence) {
+    if (absence.length === 0) {
       throw new HttpException(
               {
                 message: 'user has not yet checked in',
