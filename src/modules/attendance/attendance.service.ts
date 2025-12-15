@@ -1,7 +1,9 @@
 import {
   BadRequestException,
   ForbiddenException,
-  HttpException, HttpStatus, Injectable,
+  HttpException,
+  HttpStatus,
+  Injectable,
 } from '@nestjs/common';
 import { AttendanceStatus } from 'generated/prisma/enums';
 import { haversineDistance } from 'src/common/utils/haversine.util';
@@ -15,9 +17,9 @@ export class AttendanceService {
   // --- CLOCK IN ---
   async clockIn(userId: string, createAttendanceDto: CreateAttendanceDto) {
     const { latIn, longIn } = createAttendanceDto;
-    const officeLat = parseFloat(process.env.OFFICE_LAT || '');
-    const officeLong = parseFloat(process.env.OFFICE_LONG || '');
-    const officeRadius = parseInt(process.env.OFFICE_RADIUS || '');
+    const officeLat = Number(Number(process.env.OFFICE_LAT).toFixed(8));
+    const officeLong = Number(Number(process.env.OFFICE_LONG).toFixed(8));
+    const officeRadius = Number(process.env.OFFICE_RADIUS || '');
 
     const distance = haversineDistance(latIn, longIn, officeLat, officeLong);
 
@@ -105,8 +107,8 @@ export class AttendanceService {
         },
       },
       include: {
-        user: true
-      }
+        user: true,
+      },
     });
 
     if (!attendance) {
@@ -117,7 +119,7 @@ export class AttendanceService {
             date: start.toISOString().split('T')[0],
             status: 'ABSENT',
             clockInTime: null,
-            clockOutTime: null
+            clockOutTime: null,
           },
         },
         HttpStatus.NOT_FOUND,
@@ -132,13 +134,13 @@ export class AttendanceService {
       location: {
         clockIn: {
           lat: attendance.latIn,
-          long: attendance.longIn
+          long: attendance.longIn,
         },
         clockOut: {
           lat: attendance.latOut,
-          long: attendance.longOut
-        }
-      }
+          long: attendance.longOut,
+        },
+      },
     };
   }
 }
