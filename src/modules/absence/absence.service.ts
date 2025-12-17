@@ -1,7 +1,8 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAbsenceDto } from './dto/create-absence.dto';
 import { UpdateAbsenceDto } from './dto/update-absence.dto';
 import { PrismaService } from 'src/config/prisma.service';
+import { AbsenceStatus } from 'generated/prisma/enums';
 
 @Injectable()
 export class AbsenceService {
@@ -67,4 +68,40 @@ export class AbsenceService {
 
     return absence
   }
+
+  
+  async reject(id: string, dto: { reason?: string }) {
+    const absence = await this.prisma.absenceRequest.findUnique({
+      where: { id },
+    });
+
+    if (!absence) {
+      throw new NotFoundException('Absence request not found');
+    }
+
+    if (absence.status !== AbsenceStatus.PENDING) {
+      throw new BadRequestException(
+        `Absence already ${absence.status}`,
+      );
+    }
+
+    const updated = await this.prisma.absenceRequest.update({
+      where: { id },
+      data: {
+        status: AbsenceStatus.REJECTED,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Absence rejected successfully',
+      data: {
+        id: updated.id,
+        status: updated.status,
+        rejectedReason: dto.reason || 'No reason provided',
+        updatedAt: updated.updatedAt,
+      },
+    };
+  }
+
 }
