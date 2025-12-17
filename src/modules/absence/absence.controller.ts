@@ -1,4 +1,4 @@
-import { Body, Controller, Get,Post, Req,  UploadedFile,
+import { Body, Controller, Get,Param,Post, Put, Req,  UploadedFile,
   UseInterceptors, } from '@nestjs/common';
 import { AbsenceService } from './absence.service';
 import { th } from '@faker-js/faker/.';
@@ -6,6 +6,8 @@ import { ResponseMessage } from 'src/common/decorators/response-message.decorato
 import { CreateAbsenceDto } from './dto/create-absence.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerS3Config } from 'src/upload/upload.multer';
+import { RejectAbsenceDto } from './dto/reject-absence.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 
 @Controller('absence')
@@ -31,5 +33,14 @@ export class AbsenceController {
     const userId = req.user?.userId;
 
     return this.absenceService.history(userId);
+  }
+
+  @Put(':id/reject')
+  @Roles("ADMIN")
+  async rejectAbsence(
+    @Param('id') id: string,
+    @Body() dto: RejectAbsenceDto,
+  ) {
+    return this.absenceService.reject(id, dto);
   }
 }
