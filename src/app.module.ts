@@ -10,6 +10,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { UsersModule } from './modules/users/users.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { AbsenceModule } from './modules/absence/absence.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   providers: [
@@ -36,6 +37,7 @@ import { AbsenceModule } from './modules/absence/absence.module';
     ProfileModule,
     AttendanceModule,
     AbsenceModule,
+    NotificationModule,
   ],
 })
 export class AppModule {}
