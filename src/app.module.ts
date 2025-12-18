@@ -11,6 +11,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { AbsenceModule } from './modules/absence/absence.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   providers: [
@@ -38,6 +39,7 @@ import { NotificationModule } from './modules/notification/notification.module';
     AttendanceModule,
     AbsenceModule,
     NotificationModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}
