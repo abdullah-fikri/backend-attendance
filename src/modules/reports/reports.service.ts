@@ -17,16 +17,19 @@ export class ReportsService {  constructor(private prisma: PrismaService) {}
     const pagination = buildPagination({ page, limit });
 
     // --- MONTH FILTER ---
-    let dateFilter: any;
+  const parsedMonth = month ? Number(month) : undefined;
+  const parsedYear = year ? Number(year) : undefined;
 
-    if (month) {
-      const currentYear = year ?? new Date().getFullYear();
+  let dateFilter: any;
 
-      dateFilter = {
-        gte: new Date(currentYear, month - 1, 1),
-        lt: new Date(currentYear, month, 1),
-      };
-    }
+  if (parsedMonth && parsedMonth >= 1 && parsedMonth <= 12) {
+    const currentYear = parsedYear ?? new Date().getFullYear();
+
+    dateFilter = {
+      gte: new Date(Date.UTC(currentYear, parsedMonth - 1, 1)),
+      lt: new Date(Date.UTC(currentYear, parsedMonth, 1)),
+    };
+  }
 
 
     // --- SEARCH BY FULLNAME ---
@@ -53,7 +56,7 @@ export class ReportsService {  constructor(private prisma: PrismaService) {}
     }
 
     const userIds = users.map(u => u.id);
-
+    const userMap = new Map(users.map(u => [u.id, u]));
 
     // --- GROUP ATTENDANCE ---
     const grouped = await this.prisma.attendance.groupBy({
@@ -74,7 +77,8 @@ export class ReportsService {  constructor(private prisma: PrismaService) {}
     });
 
   const leaderboard = grouped.map((item, index) => {
-    const user = users.find(u => u.id === item.userId);
+    const user = userMap.get(item.userId);
+
     return {
       rank: index + 1,
       userId: item.userId,
@@ -94,5 +98,5 @@ export class ReportsService {  constructor(private prisma: PrismaService) {}
     data: paginatedData,
     meta: buildMeta(pagination.page, pagination.limit, total),
   };
-}
+  }
 }

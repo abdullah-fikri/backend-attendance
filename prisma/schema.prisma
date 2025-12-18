@@ -31,6 +31,7 @@ model User {
 
 
   @@index([email])
+  @@index([fullName])
   @@map("users")
 }
 
@@ -66,6 +67,7 @@ model Attendance {
 
   @@index([userId])
   @@index([date])
+  @@index([status, createdAt, userId])
 
   @@map("attendances")
 }
