@@ -12,9 +12,14 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { AbsenceModule } from './modules/absence/absence.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
-  providers: [
+    providers: [
+    {
+    provide: APP_GUARD,
+    useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
@@ -24,7 +29,15 @@ import { ReportsModule } from './modules/reports/reports.module';
       useClass: RolesGuard,
     },
   ],
-  imports: [
+imports: [
+    ThrottlerModule.forRoot({
+      throttlers: [
+        { 
+          ttl: 60000,
+          limit: 100,
+        },
+      ],
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath:
