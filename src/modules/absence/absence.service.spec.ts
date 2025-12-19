@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AbsenceStatus } from 'generated/prisma/enums';
 import { PrismaService } from 'src/config/prisma.service';
@@ -239,6 +244,126 @@ describe('AbsenceService', () => {
       expect(prisma.absenceRequest.findMany).toHaveBeenCalledWith({
         where: { userId },
       });
+    });
+  });
+
+  describe('reject', () => {
+    const absenceId = 'absence-123';
+    const mockDto = { reason: 'Dokumen tidak lengkap' };
+
+    const mockAbsence = {
+      id: absenceId,
+      userId: 'user-123',
+      type: 'SICK',
+      startDate: new Date('2025-12-20'),
+      endDate: new Date('2025-12-22'),
+      reason: 'Sakit',
+      status: AbsenceStatus.PENDING,
+      attachmentUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('Should reject absence request successfully with reason', async () => {
+      const updatedAbsence = {
+        ...mockAbsence,
+        status: AbsenceStatus.REJECTED,
+        updatedAt: new Date(),
+      };
+
+      mockPrismaService.absenceRequest.findUnique.mockResolvedValue(
+        mockAbsence,
+      );
+      mockPrismaService.absenceRequest.update.mockResolvedValue(updatedAbsence);
+
+      const result = await service.reject(absenceId, mockDto);
+
+      expect(prisma.absenceRequest.findUnique).toHaveBeenCalledWith({
+        where: { id: absenceId },
+      });
+
+      expect(prisma.absenceRequest.update).toHaveBeenCalledWith({
+        where: { id: absenceId },
+        data: {
+          status: AbsenceStatus.REJECTED,
+        },
+      });
+
+      expect(result).toEqual({
+        success: true,
+        message: 'Absence rejected successfully',
+        data: {
+          id: updatedAbsence.id,
+          status: updatedAbsence.status,
+          rejectedReason: mockDto.reason,
+          updatedAt: updatedAbsence.updatedAt,
+        },
+      });
+    });
+
+    it('Should reject absence request successfully without reason', async () => {
+      const updatedAbsence = {
+        ...mockAbsence,
+        status: AbsenceStatus.REJECTED,
+        updatedAt: new Date(),
+      };
+
+      mockPrismaService.absenceRequest.findUnique.mockResolvedValue(
+        mockAbsence,
+      );
+      mockPrismaService.absenceRequest.update.mockResolvedValue(updatedAbsence);
+
+      const result = await service.reject(absenceId, {});
+
+      expect(result.data.rejectedReason).toBe('No reason provided');
+    });
+
+    it('Should throw NotFoundException when absence request does not exist', async () => {
+      mockPrismaService.absenceRequest.findUnique.mockResolvedValue(null);
+
+      await expect(service.reject(absenceId, mockDto)).rejects.toThrow(
+        new NotFoundException('Absence request not found'),
+      );
+
+      expect(prisma.absenceRequest.findUnique).toHaveBeenCalledWith({
+        where: { id: absenceId },
+      });
+
+      expect(prisma.absenceRequest.update).not.toHaveBeenCalled();
+    });
+
+    it('Should throw BadRequestException when absence is already approved', async () => {
+      const approvedAbsence = {
+        ...mockAbsence,
+        status: AbsenceStatus.APPROVED,
+      };
+
+      mockPrismaService.absenceRequest.findUnique.mockResolvedValue(
+        approvedAbsence,
+      );
+
+      await expect(service.reject(absenceId, mockDto)).rejects.toThrow(
+        new BadRequestException('Absence already APPROVED'),
+      );
+
+      expect(prisma.absenceRequest.update).not.toHaveBeenCalled();
+    });
+
+    it('Should throw BadRequestException when absence is already rejected', async () => {
+      const rejectedAbsence = {
+        ...mockAbsence,
+        status: AbsenceStatus.REJECTED,
+      };
+
+      mockPrismaService.absenceRequest.findUnique.mockResolvedValue(
+        rejectedAbsence,
+      );
+
+      await expect(service.reject(absenceId, mockDto)).rejects.toThrow(
+        new BadRequestException('Absence already REJECTED'),
+      );
+
+      expect(prisma.absenceRequest.update).not.toHaveBeenCalled();
     });
   });
 });
