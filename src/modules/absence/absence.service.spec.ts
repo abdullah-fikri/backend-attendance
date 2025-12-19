@@ -181,4 +181,64 @@ describe('AbsenceService', () => {
       expect(prisma.absenceRequest.create).not.toHaveBeenCalled();
     });
   });
+
+  describe('history', () => {
+    const userId = '5f4e1a4f-3b3c-443a-9d79-f294eb6e8553';
+
+    it('Should return absence history when user has absences', async () => {
+      const mockAbsences = [
+        {
+          id: 'absence-1',
+          userId,
+          type: 'SICK',
+          startDate: new Date('2025-12-15'),
+          endDate: new Date('2025-12-17'),
+          reason: 'Flu',
+          status: AbsenceStatus.APPROVED,
+          attachmentUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 'absence-2',
+          userId,
+          type: 'ANNUAL',
+          startDate: new Date('2025-12-20'),
+          endDate: new Date('2025-12-22'),
+          reason: 'Vacation',
+          status: AbsenceStatus.PENDING,
+          attachmentUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      mockPrismaService.absenceRequest.findMany.mockResolvedValue(mockAbsences);
+
+      const result = await service.history(userId);
+
+      expect(prisma.absenceRequest.findMany).toHaveBeenCalledWith({
+        where: { userId },
+      });
+
+      expect(result).toEqual(mockAbsences);
+    });
+
+    it('Should throw HttpException with NOT_FOUND when user has no absences', async () => {
+      mockPrismaService.absenceRequest.findMany.mockResolvedValue([]);
+
+      await expect(service.history(userId)).rejects.toThrow(
+        new HttpException(
+          {
+            message: 'user has not yet checked in',
+          },
+          HttpStatus.NOT_FOUND,
+        ),
+      );
+
+      expect(prisma.absenceRequest.findMany).toHaveBeenCalledWith({
+        where: { userId },
+      });
+    });
+  });
 });
