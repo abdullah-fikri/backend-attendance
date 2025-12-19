@@ -1,4 +1,3 @@
-
 import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 import { AbsenceType } from 'generated/prisma/enums';
 

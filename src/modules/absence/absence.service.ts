@@ -1,18 +1,19 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateAbsenceDto } from './dto/create-absence.dto';
-import { UpdateAbsenceDto } from './dto/update-absence.dto';
-import { PrismaService } from 'src/config/prisma.service';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { AbsenceStatus } from 'generated/prisma/enums';
+import { PrismaService } from 'src/config/prisma.service';
+import { CreateAbsenceDto } from './dto/create-absence.dto';
 
 @Injectable()
 export class AbsenceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(
-    userId: string,
-    dto: CreateAbsenceDto,
-    file?: any,
-  ) {
+  async create(userId: string, dto: CreateAbsenceDto, file?: any) {
     const startDate = new Date(dto.startDate);
     const endDate = new Date(dto.endDate);
 
@@ -47,7 +48,7 @@ export class AbsenceService {
         startDate,
         endDate,
         reason: dto.reason,
-        attachmentUrl: file?.location ?? null, 
+        attachmentUrl: file?.location ?? null,
       },
     });
   }
@@ -59,17 +60,16 @@ export class AbsenceService {
 
     if (absence.length === 0) {
       throw new HttpException(
-              {
-                message: 'user has not yet checked in',
-              },
-              HttpStatus.NOT_FOUND,
-            );
+        {
+          message: 'user has not yet checked in',
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
 
-    return absence
+    return absence;
   }
 
-  
   async reject(id: string, dto: { reason?: string }) {
     const absence = await this.prisma.absenceRequest.findUnique({
       where: { id },
@@ -80,9 +80,7 @@ export class AbsenceService {
     }
 
     if (absence.status !== AbsenceStatus.PENDING) {
-      throw new BadRequestException(
-        `Absence already ${absence.status}`,
-      );
+      throw new BadRequestException(`Absence already ${absence.status}`);
     }
 
     const updated = await this.prisma.absenceRequest.update({
@@ -103,5 +101,4 @@ export class AbsenceService {
       },
     };
   }
-
 }
