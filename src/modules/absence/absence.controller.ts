@@ -6,7 +6,7 @@ import { ResponseMessage } from 'src/common/decorators/response-message.decorato
 import { CreateAbsenceDto } from './dto/create-absence.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerS3Config } from 'src/upload/upload.multer';
-import { ApproveAbsenceDto, RejectAbsenceDto } from './dto/reject-absence.dto';
+import { RejectAbsenceDto } from './dto/reject-absence.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 
@@ -46,7 +46,7 @@ export class AbsenceController {
 
   @Put(':id/approve')
   @Roles("ADMIN")
-  async approveAbsence(@Param('id') id: string, @Body() dto : ApproveAbsenceDto) {
-    return this.absenceService.approve(id, dto)
+  async approveAbsence(@Param('id') id: string) {
+    return this.absenceService.approve(id)
   }
 }
