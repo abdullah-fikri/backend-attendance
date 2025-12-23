@@ -3,6 +3,7 @@ import { CreateAbsenceDto } from './dto/create-absence.dto';
 import { UpdateAbsenceDto } from './dto/update-absence.dto';
 import { PrismaService } from 'src/config/prisma.service';
 import { AbsenceStatus } from 'generated/prisma/enums';
+import { da } from '@faker-js/faker/.';
 
 @Injectable()
 export class AbsenceService {
@@ -104,4 +105,37 @@ export class AbsenceService {
     };
   }
 
+  async approve(id: string, dto: {reason? : string}) {
+    const absence = await this.prisma.absenceRequest.findUnique({
+      where : {id}
+    })
+
+    if (!absence) {
+      throw new NotFoundException('Absence request not found');
+    }
+
+    if (absence.status !== AbsenceStatus.PENDING) {
+      throw new BadRequestException(
+        `Absence already ${absence.status}`,
+      );
+    }
+    
+    const updated = await this.prisma.absenceRequest.update({
+      where: {id},
+      data: {
+        status: AbsenceStatus.APPROVED,
+      }
+    })
+
+    return {
+      success : true,
+      message : 'Absence approved successfully',
+      data : {
+        id: updated.id,
+        status: updated.status,
+        approvedReason: dto.reason || 'No reason provided',
+        updatedAt: updated.updatedAt,
+      }
+    }
+  }
 }

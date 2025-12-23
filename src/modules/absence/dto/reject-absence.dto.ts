@@ -5,3 +5,9 @@ export class RejectAbsenceDto {
   @IsString()
   reason?: string;
 }
+
+export class ApproveAbsenceDto {
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
