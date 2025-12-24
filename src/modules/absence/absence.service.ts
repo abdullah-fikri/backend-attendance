@@ -4,10 +4,12 @@ import { UpdateAbsenceDto } from './dto/update-absence.dto';
 import { PrismaService } from 'src/config/prisma.service';
 import { AbsenceStatus } from 'generated/prisma/enums';
 import { da, th } from '@faker-js/faker/.';
+import { GenerateExcel } from 'src/config/excel/main';
+import { AbsenceExcel } from 'src/config/excel/absenceRequests.worksheet';
 
 @Injectable()
 export class AbsenceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly excelService : GenerateExcel) {}
 
   async create(
     userId: string,
@@ -160,5 +162,31 @@ export class AbsenceService {
         updatedAt: new Date(),
       }
     }
+  }
+
+  async exportAbsence(){
+    const absences = await this.prisma.absenceRequest.findMany({
+      include: {user: true}
+    })
+
+    const workbook = this.excelService.createWorkBook()
+    
+    const worksheet = workbook.addWorksheet("Absence")
+    
+    AbsenceExcel(worksheet)
+
+    absences.forEach((absence, i) => {
+      worksheet.addRow({
+        id : i + 1,
+        fullname : absence.user.fullName,
+        type : absence.type,
+        startDate : absence.startDate,
+        endDate : absence.endDate,
+        reason : absence.reason,
+        attachmentUrl : absence.attachmentUrl,
+        status : absence.status
+      })
+    })
+    return workbook
   }
 }
