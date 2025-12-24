@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
@@ -16,10 +17,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto } from './dto/get-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
+import { GenerateExcel } from 'src/config/excel/main';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService, private readonly excelService: GenerateExcel,) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -31,6 +33,14 @@ export class UsersController {
   @ResponseMessage('Success Get Data users')
   async findAll(@Query() query: GetUsersDto, @Req() req: Request) {
     return this.usersService.findAll(query, req.originalUrl);
+  }
+
+
+  @Get('export')
+  @Roles('ADMIN')
+  async generatedExcelUsers(@Res() res: Response){
+    const workbook = await this.usersService.exportUsers()
+    await this.excelService.WriteToResponse(workbook, res, 'data-user.xlsx');
   }
 
   @Get(':id')
