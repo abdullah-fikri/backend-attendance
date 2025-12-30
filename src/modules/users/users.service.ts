@@ -6,10 +6,15 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { GetUsersDto } from './dto/get-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserMapper } from './mappers/user-mapper';
+import { GenerateExcel } from 'src/config/excel/main';
+import { UserExcel } from 'src/config/excel/user.worksheet';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly excelService: GenerateExcel,
+  ) {}
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
   }
@@ -88,5 +93,30 @@ export class UsersService {
 
   remove(id: number) {
     return `This action removes a #${id} user`;
+  }
+
+  async exportUsers() {
+    const users = await this.prisma.user.findMany({
+      include: {
+        role: true,
+      },
+    });
+
+    const workbook = this.excelService.createWorkBook();
+
+    const worksheet = workbook.addWorksheet('Users');
+
+    UserExcel(worksheet);
+
+    users.forEach((user, i) => {
+      worksheet.addRow({
+        id: i + 1,
+        fullname: user.fullName,
+        email: user.email,
+        role: user.role.name,
+      });
+    });
+
+    return workbook;
   }
 }

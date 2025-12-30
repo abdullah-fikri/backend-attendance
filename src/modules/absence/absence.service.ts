@@ -6,12 +6,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AbsenceStatus } from 'generated/prisma/enums';
+import { GenerateExcel } from 'src/config/excel/main';
 import { PrismaService } from 'src/config/prisma.service';
 import { CreateAbsenceDto } from './dto/create-absence.dto';
 
 @Injectable()
 export class AbsenceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly excelService: GenerateExcel,
+  ) {}
 
   async create(userId: string, dto: CreateAbsenceDto, file?: any) {
     const startDate = new Date(dto.startDate);

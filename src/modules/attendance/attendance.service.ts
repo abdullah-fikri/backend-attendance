@@ -9,10 +9,12 @@ import { AttendanceStatus } from 'generated/prisma/enums';
 import { haversineDistance } from 'src/common/utils/haversine.util';
 import { PrismaService } from 'src/config/prisma.service';
 import { CreateAttendanceDto, CreateClockOutDto } from './dto/create-attendance.dto';
+import { GenerateExcel } from 'src/config/excel/main';
+import { AttendaceExcel } from 'src/config/excel/attendace.worksheet';
 
 @Injectable()
 export class AttendanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly excelService: GenerateExcel) {}
 
   // --- CLOCK IN ---
   async clockIn(userId: string, createAttendanceDto: CreateAttendanceDto) {
@@ -208,5 +210,30 @@ export class AttendanceService {
         },
       },
     };
+  }
+
+  async exportAttendace(){
+    const attendances = await this.prisma.attendance.findMany({
+      include: {
+        user: true
+      }
+    })
+
+    const workbook = this.excelService.createWorkBook()
+
+    const worksheet = workbook.addWorksheet("Attendace")
+
+    AttendaceExcel(worksheet)
+
+    attendances.forEach((attendance, i) => {
+      worksheet.addRow({
+        id : i + 1,
+        fullname : attendance.user.fullName,
+        clockIn : attendance.clockInTime,
+        clockOut : attendance.clockOutTime,
+        status : attendance.status
+      })
+    })
+    return workbook
   }
 }
