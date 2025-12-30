@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AbsenceStatus } from 'generated/prisma/enums';
+import { GenerateExcel } from 'src/config/excel/main';
 import { PrismaService } from 'src/config/prisma.service';
 import { AbsenceService } from './absence.service';
 import { CreateAbsenceDto } from './dto/create-absence.dto';
@@ -24,6 +25,11 @@ describe('AbsenceService', () => {
     },
   };
 
+  const mockGenerateExcel = {
+    createWorkBook: jest.fn(),
+    WriteToResponse: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -31,6 +37,10 @@ describe('AbsenceService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: GenerateExcel,
+          useValue: mockGenerateExcel,
         },
       ],
     }).compile();
@@ -47,11 +57,10 @@ describe('AbsenceService', () => {
     const userId = '5f4e1a4f-3b3c-443a-9d79-f294eb6e8553';
     const mockDto: CreateAbsenceDto = {
       type: 'SICK',
-      startDate: '2025-12-11',
-      endDate: '2025-12-12',
-      reason: 'Flue',
+      startDate: '2025-12-20',
+      endDate: '2025-12-22',
+      reason: 'Sakit demam',
     };
-
     const mockFile = {
       location: 'https://storage.example.com/file.pdf',
     };
