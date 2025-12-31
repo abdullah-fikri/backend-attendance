@@ -10,6 +10,8 @@ import type { Response } from 'express';
 import { Public } from 'src/common/decorators/public.decorator';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 import { AuthService } from './auth.service';
+import { CreateAuthDto } from './dto/create-auth.dto';
+import { ApiBody } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -18,14 +20,15 @@ export class AuthController {
   @Post('login')
   @Public()
   @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: CreateAuthDto })
   @ResponseMessage('success to login')
   async login(
-    @Body() body: { email: string; password: string },
+    @Body() body: CreateAuthDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const { email, password } = body;
     const token = await this.authService.login(email, password);
-
+    console.log(token)
     res.cookie('accessToken', token, {
       httpOnly: true,
       secure: false,
