@@ -14,7 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { GenerateExcel } from 'src/config/excel/main';
-import { multerS3Config } from 'src/upload/upload.multer';
+import { multerS3Config } from 'src/config/s3/s3.upload';
 import { AbsenceService } from './absence.service';
 import { CreateAbsenceDto } from './dto/create-absence.dto';
 import { RejectAbsenceDto } from './dto/reject-absence.dto';
