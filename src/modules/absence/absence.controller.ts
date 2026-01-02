@@ -1,19 +1,30 @@
-import { Body, Controller, Get,Param,Post, Put, Req,  Res,  UploadedFile,
-  UseInterceptors, } from '@nestjs/common';
-import { AbsenceService } from './absence.service';
-import { th } from '@faker-js/faker/.';
-import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
-import { CreateAbsenceDto } from './dto/create-absence.dto';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Req,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { multerS3Config } from 'src/upload/upload.multer';
-import { RejectAbsenceDto } from './dto/reject-absence.dto';
+import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { GenerateExcel } from 'src/config/excel/main';
-
+import { multerS3Config } from 'src/upload/upload.multer';
+import { AbsenceService } from './absence.service';
+import { CreateAbsenceDto } from './dto/create-absence.dto';
+import { RejectAbsenceDto } from './dto/reject-absence.dto';
 
 @Controller('absence')
 export class AbsenceController {
-  constructor(private readonly absenceService: AbsenceService, private readonly excelService: GenerateExcel) {}
+  constructor(
+    private readonly absenceService: AbsenceService,
+    private readonly excelService: GenerateExcel,
+  ) {}
 
   @Post()
   @UseInterceptors(FileInterceptor('attachment', multerS3Config))
@@ -36,25 +47,22 @@ export class AbsenceController {
     return this.absenceService.history(userId);
   }
 
-    @Get('export')
-    @Roles('ADMIN')
-    async generatedExcelAbsence(@Res() res: Response){
-        const workbook = await this.absenceService.exportAbsence()
-        await this.excelService.WriteToResponse(workbook, res, 'data-absence.xlsx');
-      }
+  @Get('export')
+  @Roles('ADMIN')
+  async generatedExcelAbsence(@Res() res: Response) {
+    const workbook = await this.absenceService.exportAbsence();
+    await this.excelService.WriteToResponse(workbook, res, 'data-absence.xlsx');
+  }
 
   @Put(':id/reject')
-  @Roles("ADMIN")
-  async rejectAbsence(
-    @Param('id') id: string,
-    @Body() dto: RejectAbsenceDto,
-  ) {
+  @Roles('ADMIN')
+  async rejectAbsence(@Param('id') id: string, @Body() dto: RejectAbsenceDto) {
     return this.absenceService.reject(id, dto);
   }
 
   @Put(':id/approve')
-  @Roles("ADMIN")
+  @Roles('ADMIN')
   async approveAbsence(@Param('id') id: string) {
-    return this.absenceService.approve(id)
+    return this.absenceService.approve(id);
   }
 }
