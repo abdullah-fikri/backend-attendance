@@ -1,21 +1,23 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateAbsenceDto } from './dto/create-absence.dto';
-import { UpdateAbsenceDto } from './dto/update-absence.dto';
-import { PrismaService } from 'src/config/prisma.service';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { AbsenceStatus } from 'generated/prisma/enums';
-import { da, th } from '@faker-js/faker/.';
 import { GenerateExcel } from 'src/config/excel/main';
-import { AbsenceExcel } from 'src/config/excel/absenceRequests.worksheet';
+import { PrismaService } from 'src/config/prisma.service';
+import { CreateAbsenceDto } from './dto/create-absence.dto';
 
 @Injectable()
 export class AbsenceService {
-  constructor(private readonly prisma: PrismaService, private readonly excelService : GenerateExcel) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly excelService: GenerateExcel,
+  ) {}
 
-  async create(
-    userId: string,
-    dto: CreateAbsenceDto,
-    file?: any,
-  ) {
+  async create(userId: string, dto: CreateAbsenceDto, file?: any) {
     const startDate = new Date(dto.startDate);
     const endDate = new Date(dto.endDate);
 
@@ -50,7 +52,7 @@ export class AbsenceService {
         startDate,
         endDate,
         reason: dto.reason,
-        attachmentUrl: file?.location ?? null, 
+        attachmentUrl: file?.location ?? null,
       },
     });
   }
@@ -62,17 +64,16 @@ export class AbsenceService {
 
     if (absence.length === 0) {
       throw new HttpException(
-              {
-                message: 'user has not yet checked in',
-              },
-              HttpStatus.NOT_FOUND,
-            );
+        {
+          message: 'user has not yet checked in',
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
 
-    return absence
+    return absence;
   }
 
-  
   async reject(id: string, dto: { reason?: string }) {
     const absence = await this.prisma.absenceRequest.findUnique({
       where: { id },
@@ -83,9 +84,7 @@ export class AbsenceService {
     }
 
     if (absence.status !== AbsenceStatus.PENDING) {
-      throw new BadRequestException(
-        `Absence already ${absence.status}`,
-      );
+      throw new BadRequestException(`Absence already ${absence.status}`);
     }
 
     const updated = await this.prisma.absenceRequest.update({
@@ -105,88 +104,5 @@ export class AbsenceService {
         updatedAt: updated.updatedAt,
       },
     };
-  }
-  
-  async approve(id: string) {
-    const absence = await this.prisma.absenceRequest.findUnique({
-      where: { id },
-    });
-  
-    if (!absence) {
-      throw new NotFoundException('Absence request not found');
-    }
-  
-    if (absence.status !== AbsenceStatus.PENDING) {
-      throw new BadRequestException(`Absence already ${absence.status}`);
-    }
-  
-    const start = new Date(absence.startDate);
-    const end = new Date(absence.endDate);
-  
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-  
-    const leaveDays =
-      Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  
-    await this.prisma.$transaction(async (tx) => {
-      const user = await tx.user.findUnique({
-        where: { id: absence.userId },
-      });
-  
-      if (!user || user.leaveBalance < leaveDays) {
-        throw new BadRequestException('Leave balance is not sufficient');
-      }
-  
-      await tx.absenceRequest.update({
-        where: { id },
-        data: {
-          status: AbsenceStatus.APPROVED,
-        },
-      });
-  
-      await tx.user.update({
-        where: { id: absence.userId },
-        data: {
-          leaveBalance: { decrement: leaveDays },
-        },
-      });
-    });
-  
-    return {
-      success : true,
-      message : 'Absence approved successfully',
-      data : {
-        id: absence.id,
-        status: AbsenceStatus.APPROVED,
-        updatedAt: new Date(),
-      }
-    }
-  }
-
-  async exportAbsence(){
-    const absences = await this.prisma.absenceRequest.findMany({
-      include: {user: true}
-    })
-
-    const workbook = this.excelService.createWorkBook()
-    
-    const worksheet = workbook.addWorksheet("Absence")
-    
-    AbsenceExcel(worksheet)
-
-    absences.forEach((absence, i) => {
-      worksheet.addRow({
-        id : i + 1,
-        fullname : absence.user.fullName,
-        type : absence.type,
-        startDate : absence.startDate,
-        endDate : absence.endDate,
-        reason : absence.reason,
-        attachmentUrl : absence.attachmentUrl,
-        status : absence.status
-      })
-    })
-    return workbook
   }
 }

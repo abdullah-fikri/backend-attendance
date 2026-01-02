@@ -31,8 +31,8 @@ model User {
   absenceRequests AbsenceRequest[]
 
 
-  @@index([email])
-  @@index([fullName])
+  @@index([email], map: "idx_users_email")
+  @@index([fullName], map: "idx_users_full_name")
   @@map("users")
 }
 
@@ -66,9 +66,9 @@ model Attendance {
   createdAt     DateTime  @default(now())    @map("created_at")
   updatedAt     DateTime  @updatedAt         @map("updated_at")
 
-  @@index([userId])
-  @@index([date])
-  @@index([status, createdAt, userId])
+  @@index([userId], map: "idx_attendances_user_id")
+  @@index([date], map: "idx_attendances_date")
+  @@index([status, createdAt, userId], map: "idx_attendances_status_created_at_user_id")
 
   @@map("attendances")
 }

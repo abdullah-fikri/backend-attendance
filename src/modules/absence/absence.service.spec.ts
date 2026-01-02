@@ -1,18 +1,378 @@
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { AbsenceStatus } from 'generated/prisma/enums';
+import { GenerateExcel } from 'src/config/excel/main';
+import { PrismaService } from 'src/config/prisma.service';
 import { AbsenceService } from './absence.service';
+import { CreateAbsenceDto } from './dto/create-absence.dto';
 
 describe('AbsenceService', () => {
   let service: AbsenceService;
+  let prisma: PrismaService;
+
+  const mockPrismaService = {
+    absenceRequest: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+  };
+
+  const mockGenerateExcel = {
+    createWorkBook: jest.fn(),
+    WriteToResponse: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AbsenceService],
+      providers: [
+        AbsenceService,
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
+        },
+        {
+          provide: GenerateExcel,
+          useValue: mockGenerateExcel,
+        },
+      ],
     }).compile();
 
     service = module.get<AbsenceService>(AbsenceService);
+    prisma = module.get<PrismaService>(PrismaService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('create', () => {
+    const userId = '5f4e1a4f-3b3c-443a-9d79-f294eb6e8553';
+    const mockDto: CreateAbsenceDto = {
+      type: 'SICK',
+      startDate: '2025-12-20',
+      endDate: '2025-12-22',
+      reason: 'Sakit demam',
+    };
+    const mockFile = {
+      location: 'https://storage.example.com/file.pdf',
+    };
+
+    it('Should create absence request successfully without file', async () => {
+      const mockCreatedAbsence = {
+        id: 'absence-123',
+        userId,
+        type: mockDto.type,
+        startDate: new Date(mockDto.startDate),
+        endDate: new Date(mockDto.endDate),
+        reason: mockDto.reason,
+        attachmentUrl: null,
+        status: AbsenceStatus.PENDING,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockPrismaService.absenceRequest.findFirst.mockResolvedValue(null);
+      mockPrismaService.absenceRequest.create.mockResolvedValue(
+        mockCreatedAbsence,
+      );
+
+      const result = await service.create(userId, mockDto);
+
+      expect(prisma.absenceRequest.findFirst).toHaveBeenCalledWith({
+        where: {
+          userId,
+          status: { in: ['PENDING', 'APPROVED'] },
+          startDate: { lte: new Date(mockDto.endDate) },
+          endDate: { gte: new Date(mockDto.startDate) },
+        },
+      });
+
+      expect(prisma.absenceRequest.create).toHaveBeenCalledWith({
+        data: {
+          userId,
+          type: mockDto.type,
+          startDate: new Date(mockDto.startDate),
+          endDate: new Date(mockDto.endDate),
+          reason: mockDto.reason,
+          attachmentUrl: null,
+        },
+      });
+
+      expect(result).toEqual(mockCreatedAbsence);
+    });
+
+    it('Should create absence request successfully with file', async () => {
+      const mockCreatedAbsence = {
+        id: 'absence-123',
+        userId,
+        type: mockDto.type,
+        startDate: new Date(mockDto.startDate),
+        endDate: new Date(mockDto.endDate),
+        reason: mockDto.reason,
+        attachmentUrl: mockFile.location,
+        status: AbsenceStatus.PENDING,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockPrismaService.absenceRequest.findFirst.mockResolvedValue(null);
+      mockPrismaService.absenceRequest.create.mockResolvedValue(
+        mockCreatedAbsence,
+      );
+
+      const result = await service.create(userId, mockDto, mockFile);
+
+      expect(prisma.absenceRequest.create).toHaveBeenCalledWith({
+        data: {
+          userId,
+          type: mockDto.type,
+          startDate: new Date(mockDto.startDate),
+          endDate: new Date(mockDto.endDate),
+          reason: mockDto.reason,
+          attachmentUrl: mockFile.location,
+        },
+      });
+
+      expect(result).toEqual(mockCreatedAbsence);
+    });
+
+    it('Should throw HttpException with BAD_REQUEST when startDate is after endDate', async () => {
+      const invalidDto: CreateAbsenceDto = {
+        type: 'SICK',
+        startDate: '2025-12-25',
+        endDate: '2025-12-20',
+        reason: 'Test',
+      };
+
+      await expect(service.create(userId, invalidDto)).rejects.toThrow(
+        new HttpException(
+          { message: 'startDate must be before endDate' },
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+
+      expect(prisma.absenceRequest.findFirst).not.toHaveBeenCalled();
+      expect(prisma.absenceRequest.create).not.toHaveBeenCalled();
+    });
+
+    it('Should throw HttpException with CONFLICT when overlap exists', async () => {
+      const mockOverlap = {
+        id: 'overlap-123',
+        userId,
+        status: AbsenceStatus.PENDING,
+        startDate: new Date('2025-12-19'),
+        endDate: new Date('2025-12-21'),
+      };
+
+      mockPrismaService.absenceRequest.findFirst.mockResolvedValue(mockOverlap);
+
+      await expect(service.create(userId, mockDto)).rejects.toThrow(
+        new HttpException(
+          {
+            message: 'absence request already exists in selected date range',
+          },
+          HttpStatus.CONFLICT,
+        ),
+      );
+
+      expect(prisma.absenceRequest.findFirst).toHaveBeenCalledWith({
+        where: {
+          userId,
+          status: { in: ['PENDING', 'APPROVED'] },
+          startDate: { lte: new Date(mockDto.endDate) },
+          endDate: { gte: new Date(mockDto.startDate) },
+        },
+      });
+
+      expect(prisma.absenceRequest.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('history', () => {
+    const userId = '5f4e1a4f-3b3c-443a-9d79-f294eb6e8553';
+
+    it('Should return absence history when user has absences', async () => {
+      const mockAbsences = [
+        {
+          id: 'absence-1',
+          userId,
+          type: 'SICK',
+          startDate: new Date('2025-12-15'),
+          endDate: new Date('2025-12-17'),
+          reason: 'Flu',
+          status: AbsenceStatus.APPROVED,
+          attachmentUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 'absence-2',
+          userId,
+          type: 'ANNUAL',
+          startDate: new Date('2025-12-20'),
+          endDate: new Date('2025-12-22'),
+          reason: 'Vacation',
+          status: AbsenceStatus.PENDING,
+          attachmentUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      mockPrismaService.absenceRequest.findMany.mockResolvedValue(mockAbsences);
+
+      const result = await service.history(userId);
+
+      expect(prisma.absenceRequest.findMany).toHaveBeenCalledWith({
+        where: { userId },
+      });
+
+      expect(result).toEqual(mockAbsences);
+    });
+
+    it('Should throw HttpException with NOT_FOUND when user has no absences', async () => {
+      mockPrismaService.absenceRequest.findMany.mockResolvedValue([]);
+
+      await expect(service.history(userId)).rejects.toThrow(
+        new HttpException(
+          {
+            message: 'user has not yet checked in',
+          },
+          HttpStatus.NOT_FOUND,
+        ),
+      );
+
+      expect(prisma.absenceRequest.findMany).toHaveBeenCalledWith({
+        where: { userId },
+      });
+    });
+  });
+
+  describe('reject', () => {
+    const absenceId = 'absence-123';
+    const mockDto = { reason: 'Dokumen tidak lengkap' };
+
+    const mockAbsence = {
+      id: absenceId,
+      userId: 'user-123',
+      type: 'SICK',
+      startDate: new Date('2025-12-20'),
+      endDate: new Date('2025-12-22'),
+      reason: 'Sakit',
+      status: AbsenceStatus.PENDING,
+      attachmentUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('Should reject absence request successfully with reason', async () => {
+      const updatedAbsence = {
+        ...mockAbsence,
+        status: AbsenceStatus.REJECTED,
+        updatedAt: new Date(),
+      };
+
+      mockPrismaService.absenceRequest.findUnique.mockResolvedValue(
+        mockAbsence,
+      );
+      mockPrismaService.absenceRequest.update.mockResolvedValue(updatedAbsence);
+
+      const result = await service.reject(absenceId, mockDto);
+
+      expect(prisma.absenceRequest.findUnique).toHaveBeenCalledWith({
+        where: { id: absenceId },
+      });
+
+      expect(prisma.absenceRequest.update).toHaveBeenCalledWith({
+        where: { id: absenceId },
+        data: {
+          status: AbsenceStatus.REJECTED,
+        },
+      });
+
+      expect(result).toEqual({
+        success: true,
+        message: 'Absence rejected successfully',
+        data: {
+          id: updatedAbsence.id,
+          status: updatedAbsence.status,
+          rejectedReason: mockDto.reason,
+          updatedAt: updatedAbsence.updatedAt,
+        },
+      });
+    });
+
+    it('Should reject absence request successfully without reason', async () => {
+      const updatedAbsence = {
+        ...mockAbsence,
+        status: AbsenceStatus.REJECTED,
+        updatedAt: new Date(),
+      };
+
+      mockPrismaService.absenceRequest.findUnique.mockResolvedValue(
+        mockAbsence,
+      );
+      mockPrismaService.absenceRequest.update.mockResolvedValue(updatedAbsence);
+
+      const result = await service.reject(absenceId, {});
+
+      expect(result.data.rejectedReason).toBe('No reason provided');
+    });
+
+    it('Should throw NotFoundException when absence request does not exist', async () => {
+      mockPrismaService.absenceRequest.findUnique.mockResolvedValue(null);
+
+      await expect(service.reject(absenceId, mockDto)).rejects.toThrow(
+        new NotFoundException('Absence request not found'),
+      );
+
+      expect(prisma.absenceRequest.findUnique).toHaveBeenCalledWith({
+        where: { id: absenceId },
+      });
+
+      expect(prisma.absenceRequest.update).not.toHaveBeenCalled();
+    });
+
+    it('Should throw BadRequestException when absence is already approved', async () => {
+      const approvedAbsence = {
+        ...mockAbsence,
+        status: AbsenceStatus.APPROVED,
+      };
+
+      mockPrismaService.absenceRequest.findUnique.mockResolvedValue(
+        approvedAbsence,
+      );
+
+      await expect(service.reject(absenceId, mockDto)).rejects.toThrow(
+        new BadRequestException('Absence already APPROVED'),
+      );
+
+      expect(prisma.absenceRequest.update).not.toHaveBeenCalled();
+    });
+
+    it('Should throw BadRequestException when absence is already rejected', async () => {
+      const rejectedAbsence = {
+        ...mockAbsence,
+        status: AbsenceStatus.REJECTED,
+      };
+
+      mockPrismaService.absenceRequest.findUnique.mockResolvedValue(
+        rejectedAbsence,
+      );
+
+      await expect(service.reject(absenceId, mockDto)).rejects.toThrow(
+        new BadRequestException('Absence already REJECTED'),
+      );
+
+      expect(prisma.absenceRequest.update).not.toHaveBeenCalled();
+    });
   });
 });
