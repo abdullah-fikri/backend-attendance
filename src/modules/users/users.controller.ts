@@ -24,6 +24,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService, private readonly excelService: GenerateExcel,) {}
 
   @Post()
+  @Roles('ADMIN')
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
