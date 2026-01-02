@@ -147,7 +147,7 @@ export class AttendanceService {
   }
 
   // get attendance today
-  async findOne(userId: string) {
+  async findToday(user: { userId: string; role: string }) {
     const today = new Date();
     const start = new Date(
       today.getFullYear(),
@@ -157,6 +157,7 @@ export class AttendanceService {
       0,
       0,
     );
+  
     const end = new Date(
       today.getFullYear(),
       today.getMonth(),
@@ -165,52 +166,95 @@ export class AttendanceService {
       59,
       59,
     );
-
-    const attendance = await this.prisma.attendance.findFirst({
-      where: {
-        userId,
-        date: {
-          gte: start,
-          lte: end,
-        },
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    if (!attendance) {
-      throw new HttpException(
-        {
-          message: 'not found with the user',
-          data: {
-            date: start.toISOString().split('T')[0],
-            status: 'ABSENT',
-            clockInTime: null,
-            clockOutTime: null,
+  
+    // employee
+    if (user.role === 'EMPLOYEE') {
+      const attendance = await this.prisma.attendance.findFirst({
+        where: {
+          userId: user.userId,
+          date: {
+            gte: start,
+            lte: end,
           },
         },
-        HttpStatus.NOT_FOUND,
-      );
+        include: {
+          user: true,
+        },
+      });
+  
+      if (!attendance) {
+        throw new HttpException(
+          {
+            message: 'not found with the user',
+            data: {
+              date: start.toISOString().split('T')[0],
+              status: 'ABSENT',
+              clockInTime: null,
+              clockOutTime: null,
+            },
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+  
+      return {
+        fullName: attendance.user.fullName,
+        date: attendance.date,
+        status: attendance.status,
+        clockInTime: attendance.clockInTime,
+        clockOutTime: attendance.clockOutTime,
+        location: {
+          clockIn: {
+            lat: attendance.latIn,
+            long: attendance.longIn,
+          },
+          clockOut: {
+            lat: attendance.latOut,
+            long: attendance.longOut,
+          },
+        },
+      };
     }
-    return {
-      fullName: attendance.user.fullName,
-      date: attendance.date,
-      status: attendance.status,
-      clockInTime: attendance.clockInTime,
-      clockOutTime: attendance.clockOutTime,
-      location: {
-        clockIn: {
-          lat: attendance.latIn,
-          long: attendance.longIn,
+  
+    // admin
+    if (user.role === 'ADMIN') {
+      const attendances = await this.prisma.attendance.findMany({
+        where: {
+          date: {
+            gte: start,
+            lte: end,
+          },
         },
-        clockOut: {
-          lat: attendance.latOut,
-          long: attendance.longOut,
+        include: {
+          user: true,
         },
-      },
-    };
-  }
+        orderBy: {
+          date: 'asc',
+        },
+      });
+  
+      return attendances.map((attendance) => ({
+        userId: attendance.userId,
+        fullName: attendance.user.fullName,
+        date: attendance.date,
+        status: attendance.status,
+        clockInTime: attendance.clockInTime,
+        clockOutTime: attendance.clockOutTime,
+        location: {
+          clockIn: {
+            lat: attendance.latIn,
+            long: attendance.longIn,
+          },
+          clockOut: {
+            lat: attendance.latOut,
+            long: attendance.longOut,
+          },
+        },
+      }));
+    }
+  
+    throw new ForbiddenException();
+  }  
 
   async exportAttendace(){
     const attendances = await this.prisma.attendance.findMany({

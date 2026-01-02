@@ -55,9 +55,10 @@ export class AttendanceController {
 
   @Get('today')
   @ResponseMessage('Get Attendance today success')
-  @Roles('EMPLOYEE')
+  @Roles('EMPLOYEE', 'ADMIN')
   async findOne(@Req() req) {
-    return this.attendanceService.findOne(req.user.userId);
+    const { userId, role } = req.user;
+    return this.attendanceService.findToday({ userId, role });
   }
 
   @Get('export')
