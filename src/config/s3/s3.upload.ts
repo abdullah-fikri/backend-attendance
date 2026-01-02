@@ -1,6 +1,6 @@
 import multerS3 from 'multer-s3';
-import { s3Client } from '../libs/s3/s3.client';
 import { extname } from 'path';
+import { s3Client } from './s3.client';
 
 export const multerS3Config = {
   storage: multerS3({
@@ -10,14 +10,15 @@ export const multerS3Config = {
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
       const fileName = `${Date.now()}-${file.originalname}`;
-      const folder = file.mimetype === 'application/pdf' ? 'absent/pdf' : 'absent/images';
+      const folder =
+        file.mimetype === 'application/pdf' ? 'absent/pdf' : 'absent/images';
       cb(null, `${folder}/${fileName}`);
     },
   }),
 
-//   --- VALIDATION MAX FILE ---
+  //   --- VALIDATION MAX FILE ---
   limits: {
-    fileSize: 5 * 1024 * 1024, 
+    fileSize: 5 * 1024 * 1024,
   },
 
   // --- VALIDATION MIMETYPE ---
@@ -33,7 +34,10 @@ export const multerS3Config = {
     const allowedExt = ['.png', '.jpg', '.jpeg', '.pdf'];
     const ext = extname(file.originalname).toLowerCase();
 
-    if (!allowedMimeTypes.includes(file.mimetype) || !allowedExt.includes(ext)) {
+    if (
+      !allowedMimeTypes.includes(file.mimetype) ||
+      !allowedExt.includes(ext)
+    ) {
       return cb(
         new Error(
           'Invalid file type. Only PNG, JPG, JPEG, and PDF are allowed.',

@@ -10,6 +10,7 @@ import { EmailService } from 'src/config/email/email.service';
 import { AbsenceExcel } from 'src/config/excel/absenceRequests.worksheet';
 import { GenerateExcel } from 'src/config/excel/main';
 import { PrismaService } from 'src/config/prisma.service';
+import { deleteFileFromS3 } from 'src/config/s3/s3.delete';
 import { CreateAbsenceDto } from './dto/create-absence.dto';
 
 @Injectable()
@@ -118,6 +119,16 @@ export class AbsenceService {
     });
 
     const duration = this.calculateDuration(absence.startDate, absence.endDate);
+
+    // Delete attachment file from S3 if exists
+    if (absence.attachmentUrl) {
+      try {
+        await deleteFileFromS3(absence.attachmentUrl);
+        console.log(`Deleted attachment for rejected absence: ${id}`);
+      } catch (error) {
+        console.error('Failed to delete attachment from S3:', error);
+      }
+    }
 
     // Send rejection email
     try {
