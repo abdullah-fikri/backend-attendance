@@ -9,17 +9,19 @@ import {
 } from '@nestjs/common';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { GenerateExcel } from 'src/config/excel/main';
 import { AttendanceService } from './attendance.service';
 import {
   CreateAttendanceDto,
   CreateClockOutDto,
 } from './dto/create-attendance.dto';
-import { GenerateExcel } from 'src/config/excel/main';
 
 @Controller('attendance')
-@Roles('EMPLOYEE')
 export class AttendanceController {
-  constructor(private readonly attendanceService: AttendanceService,  private readonly excelService: GenerateExcel) {}
+  constructor(
+    private readonly attendanceService: AttendanceService,
+    private readonly excelService: GenerateExcel,
+  ) {}
 
   @Post('clock-in')
   @ResponseMessage('Created Attendance successfully')
@@ -60,8 +62,12 @@ export class AttendanceController {
 
   @Get('export')
   @Roles('ADMIN')
-  async generatedExcelAttendace(@Res() res: Response){
-      const workbook = await this.attendanceService.exportAttendace()
-      await this.excelService.WriteToResponse(workbook, res, 'data-attendace.xlsx');
-    }
+  async generatedExcelAttendace(@Res() res: Response) {
+    const workbook = await this.attendanceService.exportAttendace();
+    await this.excelService.WriteToResponse(
+      workbook,
+      res,
+      'data-attendace.xlsx',
+    );
+  }
 }
