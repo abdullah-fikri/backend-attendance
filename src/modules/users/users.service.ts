@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { hateoas } from 'src/common/utils/hateoas.util';
 import { buildMeta, buildPagination } from 'src/common/utils/pagination.util';
 import { PrismaService } from 'src/config/prisma.service';
@@ -8,6 +8,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserMapper } from './mappers/user-mapper';
 import { GenerateExcel } from 'src/config/excel/main';
 import { UserExcel } from 'src/config/excel/user.worksheet';
+import { hashPassword } from 'src/common/utils/password.util';
 
 @Injectable()
 export class UsersService {
@@ -15,8 +16,33 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly excelService: GenerateExcel,
   ) {}
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  async create(createUserDto: CreateUserDto) {
+    const { email, password, fullName } = createUserDto;
+  
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+  
+    if (existingUser) {
+      throw new HttpException(
+        { message: 'Email is already' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  
+    const hashedPassword = await hashPassword(password);
+  
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        fullName,
+        passwordHash: hashedPassword,
+        roleId: 2, 
+      },
+    });
+  
+    const { passwordHash: _, ...safeUser } = user;
+    return safeUser;
   }
 
   async findAll(query: GetUsersDto, baseUrl: string) {
