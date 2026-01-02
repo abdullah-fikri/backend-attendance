@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AbsenceStatus } from 'generated/prisma/enums';
+import { EmailService } from 'src/config/email/email.service';
 import { AbsenceExcel } from 'src/config/excel/absenceRequests.worksheet';
 import { GenerateExcel } from 'src/config/excel/main';
 import { PrismaService } from 'src/config/prisma.service';
@@ -16,6 +17,7 @@ export class AbsenceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly excelService: GenerateExcel,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(userId: string, dto: CreateAbsenceDto, file?: any) {
@@ -75,9 +77,29 @@ export class AbsenceService {
     return absence;
   }
 
+  private formatDate(date: Date): string {
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(date);
+  }
+
+  private calculateDuration(startDate: Date, endDate: Date): number {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    return (
+      Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    );
+  }
+
   async reject(id: string, dto: { reason?: string }) {
     const absence = await this.prisma.absenceRequest.findUnique({
       where: { id },
+      include: { user: true },
     });
 
     if (!absence) {
@@ -95,6 +117,24 @@ export class AbsenceService {
       },
     });
 
+    const duration = this.calculateDuration(absence.startDate, absence.endDate);
+
+    // Send rejection email
+    try {
+      await this.emailService.sendAbsenceRejectedEmail({
+        email: absence.user.email,
+        userName: absence.user.fullName,
+        absenceType: absence.type,
+        startDate: this.formatDate(absence.startDate),
+        endDate: this.formatDate(absence.endDate),
+        duration,
+        reason: absence.reason,
+        rejectionReason: dto.reason,
+      });
+    } catch (error) {
+      console.error('Failed to send rejection email:', error);
+    }
+
     return {
       success: true,
       message: 'Absence rejected successfully',
@@ -110,6 +150,7 @@ export class AbsenceService {
   async approve(id: string) {
     const absence = await this.prisma.absenceRequest.findUnique({
       where: { id },
+      include: { user: true },
     });
 
     if (!absence) {
@@ -129,6 +170,8 @@ export class AbsenceService {
     const leaveDays =
       Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
+    let updatedUser;
+
     await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
         where: { id: absence.userId },
@@ -145,13 +188,29 @@ export class AbsenceService {
         },
       });
 
-      await tx.user.update({
+      updatedUser = await tx.user.update({
         where: { id: absence.userId },
         data: {
           leaveBalance: { decrement: leaveDays },
         },
       });
     });
+
+    // Send approval email
+    try {
+      await this.emailService.sendAbsenceApprovedEmail({
+        email: absence.user.email,
+        userName: absence.user.fullName,
+        absenceType: absence.type,
+        startDate: this.formatDate(absence.startDate),
+        endDate: this.formatDate(absence.endDate),
+        duration: leaveDays,
+        reason: absence.reason,
+        remainingBalance: updatedUser.leaveBalance,
+      });
+    } catch (error) {
+      console.error('Failed to send approval email:', error);
+    }
 
     return {
       success: true,
