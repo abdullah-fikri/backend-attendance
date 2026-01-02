@@ -1,7 +1,8 @@
-import 'dotenv/config';
-import { NestFactory, Reflector } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
+import 'dotenv/config';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global.exception.filter';
@@ -9,7 +10,10 @@ import { ResponseInterceptor } from './common/filters/response.interceptors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   app.use(helmet());
+  app.use(cookieParser());
+
   app.enableCors({
     origin: process.env.APP_URL,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
