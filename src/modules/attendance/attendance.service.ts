@@ -5,7 +5,7 @@ import {
   HttpStatus,
   Injectable,
 } from '@nestjs/common';
-import { AttendanceStatus } from 'generated/prisma/enums';
+import { AttendanceStatus } from '@prisma/client';
 import { haversineDistance } from 'src/common/utils/haversine.util';
 import { PrismaService } from 'src/config/prisma.service';
 import { CreateAttendanceDto, CreateClockOutDto } from './dto/create-attendance.dto';

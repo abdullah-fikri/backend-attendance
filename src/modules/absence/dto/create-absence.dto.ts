@@ -1,5 +1,5 @@
 import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
-import { AbsenceType } from 'generated/prisma/enums';
+import { AbsenceType } from '@prisma/client';
 
 export class CreateAbsenceDto {
   @IsEnum(AbsenceType)

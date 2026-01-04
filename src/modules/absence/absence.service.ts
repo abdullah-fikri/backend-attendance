@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AbsenceStatus } from 'generated/prisma/enums';
+import { AbsenceStatus } from '@prisma/client';
 import { EmailService } from 'src/config/email/email.service';
 import { AbsenceExcel } from 'src/config/excel/absenceRequests.worksheet';
 import { GenerateExcel } from 'src/config/excel/main';

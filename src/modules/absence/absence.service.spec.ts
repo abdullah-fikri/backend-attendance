@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AbsenceStatus } from 'generated/prisma/enums';
+import { AbsenceStatus } from '@prisma/client';
 import { GenerateExcel } from 'src/config/excel/main';
 import { PrismaService } from 'src/config/prisma.service';
 import { AbsenceService } from './absence.service';

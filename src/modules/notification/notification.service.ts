@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AbsenceStatus } from 'generated/prisma/enums';
+import { AbsenceStatus } from '@prisma/client';
 import { STATUS_CODES } from 'http';
 import { PrismaService } from 'src/config/prisma.service';
 
