@@ -25,4 +25,18 @@ constructor(
         })
     }
 
+    @Get('monthly')
+    @Roles('ADMIN')
+    @ResponseMessage('Get report monthly Success')
+    async getMonthlyReport(
+      @Query('month') month?: string,
+      @Query('startDate') startDate?: string,
+      @Query('endDate') endDate?: string,
+    ) {
+      return this.reportsService.getMonthlyAnalytics({
+        month,
+        startDate,
+        endDate,
+      });
+    }
 }
