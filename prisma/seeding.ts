@@ -1,4 +1,5 @@
-import { PrismaClient, Role } from 'generated/prisma/client';
+import { Role } from 'generated/prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { hashPassword } from 'src/common/utils/password.util';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { faker } from '@faker-js/faker';
