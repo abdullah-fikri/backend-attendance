@@ -1,12 +1,12 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import cookieParser from 'cookie-parser';
 import 'dotenv/config';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global.exception.filter';
 import { ResponseInterceptor } from './common/filters/response.interceptors';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -37,13 +37,20 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addCookieAuth('accessToken', {
+      type: 'apiKey',
+      in: 'cookie',
+    })
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document, {
     customSiteTitle: 'API Docs',
     customfavIcon: 'https://nestjs.com/img/logo-small.svg',
+    swaggerOptions: {
+      persistAuthorization: true, 
+      withCredentials: true,      
+    },
   });
 
   const port = process.env.PORT ?? 3000;

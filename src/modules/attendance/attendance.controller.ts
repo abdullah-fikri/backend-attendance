@@ -9,12 +9,13 @@ import {
 } from '@nestjs/common';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { GenerateExcel } from 'src/config/excel/main';
 import { AttendanceService } from './attendance.service';
 import {
   CreateAttendanceDto,
   CreateClockOutDto,
 } from './dto/create-attendance.dto';
+import { GenerateExcel } from 'src/config/excel/main';
+import { ApiCookieAuth, ApiOperation, ApiProduces } from '@nestjs/swagger';
 
 @Controller('attendance')
 export class AttendanceController {
@@ -23,6 +24,7 @@ export class AttendanceController {
     private readonly excelService: GenerateExcel,
   ) {}
 
+  @ApiCookieAuth('accessToken')
   @Post('clock-in')
   @ResponseMessage('Created Attendance successfully')
   async clockIn(@Req() req, @Body() body: CreateAttendanceDto) {
@@ -40,6 +42,7 @@ export class AttendanceController {
     return this.attendanceService.clockIn(userId, body);
   }
 
+  @ApiCookieAuth('accessToken')
   @Post('clock-out')
   @ResponseMessage('Updated Attendance successfully')
   async ClockOut(@Req() req, @Body() body: CreateClockOutDto) {
@@ -53,6 +56,11 @@ export class AttendanceController {
     return this.attendanceService.clockOut(userId, body);
   }
 
+  @ApiCookieAuth('accessToken')
+  @ApiOperation({ summary: 'Export attendance to Excel' })
+  @ApiProduces(
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
   @Get('today')
   @ResponseMessage('Get Attendance today success')
   @Roles('EMPLOYEE', 'ADMIN')
@@ -61,6 +69,7 @@ export class AttendanceController {
     return this.attendanceService.findToday({ userId, role });
   }
 
+  @ApiCookieAuth('accessToken')
   @Get('export')
   @Roles('ADMIN')
   async generatedExcelAttendace(@Res() res: Response) {
